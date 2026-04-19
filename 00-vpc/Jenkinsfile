@@ -1,0 +1,46 @@
+pipeline {
+    agent { label 'AGENT-1'}
+    environment {
+        PROJECT = 'expense'
+        COMPONENT = 'backend'
+        appVersion = ''
+        aws_account_id = '444152781209'
+        //ACC_ID = ''
+    }
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit:'MINUTES')
+    }
+    
+    stages {
+        stage('init') {
+            steps {
+                script {
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        cd 00-vpc
+                        terraform init -reconfigure
+                    """
+                }
+                    
+                }
+            }
+
+        }
+         
+    }
+    post {
+            always {
+                echo 'i will run if it is success or fail'
+                deleteDir()
+            }
+            failure {
+                echo 'i will run when pipeline fails'
+            }
+            success {
+                echo 'i will run when pipeline success'
+            }
+        }
+    }
+
+

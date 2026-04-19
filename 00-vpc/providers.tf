@@ -9,7 +9,7 @@ terraform {
   
   backend "s3" {
     bucket = "bunny-tf-state"
-    key    = "expense-dev-k8-vpc" #we should have unique keys with in the bucket same keys should not be used in the other buckets 
+    key    = "expense-dev-jenkins-vpc" #we should have unique keys with in the bucket same keys should not be used in the other buckets 
     region = "us-east-1"
     dynamodb_table = "bunny-tf-state"
   }
