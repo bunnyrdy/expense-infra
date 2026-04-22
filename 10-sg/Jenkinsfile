@@ -51,40 +51,40 @@ pipeline {
             }
         }
 
-        // stage('Parallel Stages'){
-        //     when{
-        //         expression{params.ACTION == 'apply'}
-        //     }
-        //     Parallel{
-        //         stage('Trigger Bastion'){
-        //             when{
-        //                 expression {params.ACTION == 'apply'}
-        //             }
-        //         steps{
-        //             build job: '20-Bastion', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
-        //             }
-        //         }
-        //         stage('Trigger rds'){
+        stage('Parallel Stages'){
+            when{
+                expression{params.ACTION == 'apply'}
+            }
+            Parallel{
+                stage('Trigger Bastion'){
+                    when{
+                        expression {params.ACTION == 'apply'}
+                    }
+                steps{
+                    build job: '20-Bastion', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+                    }
+                }
+                stage('Trigger rds'){
             
-        //             steps{
-        //                 build job: '50-rds', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
-        //             }
-        //         }
-        //         stage('Trigger eks'){
+                    steps{
+                        build job: '50-rds', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+                    }
+                }
+                stage('Trigger eks'){
                 
-        //             steps{
-        //                 build job: '40-eks', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
-        //             }
-        //         }
-        //         stage('Trigger ecr'){
+                    steps{
+                        build job: '40-eks', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+                    }
+                }
+                stage('Trigger ecr'){
                 
-        //             steps{
-        //                 build job: '60-rds', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
-        //             }
+                    steps{
+                        build job: '60-rds', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+                    }
 
-        //         }
-        //      }
-        // }
+                }
+             }
+        }
          
     
     post {
