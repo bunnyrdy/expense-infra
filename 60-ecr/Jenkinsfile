@@ -32,25 +32,49 @@ pipeline {
 
         }
 
-         stage('apply') {
-            // input {
-            //     message "Should we continue?"
-            //     ok "Yes, we should."
-            // }
+         stage('Apply or Destroy') {
             steps {
-                script {
+               script{
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
-                    sh """
-                        cd 60-ecr
-                        terraform apply -auto-approve
-                    """
-                }
                     
+                     if (params.ACTION == 'apply') {
+                        sh """
+                            cd 60-ecr
+                            terraform plan
+                            terraform apply -auto-approve
+                        """
+                    } else {
+                        sh """
+                            cd 60-ecr
+                            terraform destroy -auto-approve
+                        """
+                    }
                 }
+                 
+               }
             }
-
         }
-         
+        stage('Destroy Infra') {
+            when { 
+                expression { params.ACTION == 'destroy'}
+            }
+            steps {
+               script{
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    def list = ["40-eks", "50-rds", "20-bastion", "10-sg", "00-vpc"]
+                    for(item in list){
+                        sh """
+                            cd $item
+                            terraform init -reconfigure
+                            terraform destroy -auto-approve
+                        """
+                    }
+                }
+                 
+               }
+            }
+        }
+        
     }
     post {
             always {
