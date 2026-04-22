@@ -11,9 +11,9 @@ pipeline {
         disableConcurrentBuilds()
         timeout(time: 30, unit:'MINUTES')
     }
-    parameters {
-        choice(name:'ACTION',choices: ['apply', 'destory'], description: 'Pick something')
-    }
+    parameters{
+        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Pick something')
+    } 
     
     stages {
         stage('init') {
@@ -21,7 +21,7 @@ pipeline {
                 script {
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
                     sh """
-                        cd 00-vpc
+                        cd 20-bastion
                         terraform init -reconfigure
                         terraform plan
                     """
@@ -33,15 +33,15 @@ pipeline {
         }
 
          stage('apply') {
-            input {
-                message "Should we continue?"
-                ok "Yes, we should."
-            }
+            // input {
+            //     message "Should we continue?"
+            //     ok "Yes, we should."
+            // }
             steps {
                 script {
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
                     sh """
-                        cd 00-vpc
+                        cd 20-bastion
                         terraform apply -auto-approve
                     """
                 }
@@ -49,14 +49,6 @@ pipeline {
                 }
             }
 
-        }
-        stage('Trigger SG'){
-            when{
-                expression {params.ACTION == 'apply'}
-            }
-            steps{
-                build job: '10-sg', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
-            }
         }
          
     }

@@ -1,0 +1,105 @@
+pipeline {
+    agent { label 'AGENT-1'}
+    environment {
+        PROJECT = 'expense'
+        COMPONENT = 'backend'
+        appVersion = ''
+        aws_account_id = '444152781209'
+        //ACC_ID = ''
+    }
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit:'MINUTES')
+    }
+    parameters{
+        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Pick something')
+    } 
+    
+    stages {
+        stage('init') {
+            steps {
+                script {
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        cd 10-sg
+                        terraform init -reconfigure
+                        terraform plan
+                    """
+                }
+                    
+                }
+            }
+
+        }
+    }
+
+         stage('apply') {
+            // input {
+            //     message "Should we continue?"
+            //     ok "Yes, we should."
+            // }
+            steps {
+                script {
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        cd 10-sg
+                        terraform apply -auto-approve
+                    """
+                }
+                    
+                }
+            }
+        }
+
+        // stage('Parallel Stages'){
+        //     when{
+        //         expression{params.ACTION == 'apply'}
+        //     }
+        //     Parallel{
+        //         stage('Trigger Bastion'){
+        //             when{
+        //                 expression {params.ACTION == 'apply'}
+        //             }
+        //         steps{
+        //             build job: '20-Bastion', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+        //             }
+        //         }
+        //         stage('Trigger rds'){
+            
+        //             steps{
+        //                 build job: '50-rds', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+        //             }
+        //         }
+        //         stage('Trigger eks'){
+                
+        //             steps{
+        //                 build job: '40-eks', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+        //             }
+        //         }
+        //         stage('Trigger ecr'){
+                
+        //             steps{
+        //                 build job: '60-rds', parameters: [string(name:'ACTION', value: 'apply')], propagate: true
+        //             }
+
+        //         }
+        //      }
+        // }
+         
+    
+    post {
+            always {
+                echo 'i will run if it is success or fail'
+                deleteDir()
+            }
+            failure {
+                echo 'i will run when pipeline fails'
+            }
+            success {
+                echo 'i will run when pipeline success'
+            }
+        }
+    
+}
+
+
