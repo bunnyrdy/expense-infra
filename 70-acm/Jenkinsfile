@@ -21,7 +21,7 @@ pipeline {
                 script {
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
                     sh """
-                        cd 60-ecr
+                        cd 70-acm
                         terraform init -reconfigure
                         terraform plan
                     """
@@ -39,13 +39,13 @@ pipeline {
                     
                      if (params.ACTION == 'apply') {
                         sh """
-                            cd 60-ecr
+                            cd 70-acm
                             terraform plan
                             terraform apply -auto-approve
                         """
                     } else {
                         sh """
-                            cd 60-ecr
+                            cd 70-acm
                             terraform destroy -auto-approve
                         """
                     }
@@ -54,7 +54,26 @@ pipeline {
                }
             }
         }
-        
+        stage('Destroy Infra') {
+            when { 
+                expression { params.ACTION == 'destroy'}
+            }
+            steps {
+               script{
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    def list = ["60-ingress-alb","60-ecr","40-eks", "50-rds", "20-bastion", "10-sg", "00-vpc"]
+                    for(item in list){
+                        sh """
+                            cd $item
+                            terraform init -reconfigure
+                            terraform destroy -auto-approve
+                        """
+                    }
+                }
+                 
+               }
+            }
+        }
         
     }
     post {

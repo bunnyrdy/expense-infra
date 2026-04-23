@@ -11,7 +11,7 @@ pipeline {
         disableConcurrentBuilds()
         timeout(time: 30, unit:'MINUTES')
     }
-     parameters{
+    parameters{
         choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Pick something')
     } 
     
@@ -21,7 +21,7 @@ pipeline {
                 script {
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
                     sh """
-                        cd 60-ecr
+                        cd 60-ingress-alb
                         terraform init -reconfigure
                         terraform plan
                     """
@@ -32,30 +32,25 @@ pipeline {
 
         }
 
-         stage('Apply or Destroy') {
+         stage('apply') {
+            // input {
+            //     message "Should we continue?"
+            //     ok "Yes, we should."
+            // }
             steps {
-               script{
+                script {
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
-                    
-                     if (params.ACTION == 'apply') {
-                        sh """
-                            cd 60-ecr
-                            terraform plan
-                            terraform apply -auto-approve
-                        """
-                    } else {
-                        sh """
-                            cd 60-ecr
-                            terraform destroy -auto-approve
-                        """
-                    }
+                    sh """
+                        cd 60-ingress-alb
+                        terraform apply -auto-approve
+                    """
                 }
-                 
-               }
+                    
+                }
             }
+
         }
-        
-        
+         
     }
     post {
             always {

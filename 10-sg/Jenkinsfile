@@ -69,7 +69,22 @@ pipeline {
                 }
             }
         }
-    }   // <-- this is where `stages` should actually close
+        stage('equence stages'){
+            stages {
+                stage('70-acm'){
+                    steps {
+                        build job: '70-acm', parameters: [string(name: 'ACTION', value: 'apply')], wait: false
+                    }
+                }
+                stage('60-ingress-alb'){
+                    steps {
+                        build job: '60-ingress-alb', parameters: [string(name: 'ACTION', value: 'apply')], wait: false
+                    }
+                }
+
+            }
+        }
+    }   
 
     post {
         always {
