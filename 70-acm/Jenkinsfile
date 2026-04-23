@@ -1,71 +1,93 @@
 pipeline {
-    agent { label 'AGENT-1' }
+    agent { label 'AGENT-1'}
     environment {
-        PROJECT        = 'expense'
-        COMPONENT      = 'backend'
-        appVersion     = ''
+        PROJECT = 'expense'
+        COMPONENT = 'backend'
+        appVersion = ''
         aws_account_id = '444152781209'
+        //ACC_ID = ''
     }
     options {
         disableConcurrentBuilds()
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 30, unit:'MINUTES')
     }
-    parameters {
+     parameters{
         choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Pick something')
-    }
-
+    } 
+    
     stages {
         stage('init') {
             steps {
                 script {
-                    withAWS(region: 'us-east-1', credentials: 'aws-creds') {
-                        sh """
-                            cd 70-acm
-                            terraform init -reconfigure
-                            terraform plan
-                        """
-                    }
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        cd 70-acm
+                        terraform init -reconfigure
+                        terraform plan
+                    """
+                }
+                    
                 }
             }
+
         }
 
-        stage('Apply ACM') {
-            when { expression { params.ACTION == 'apply' } }
+         stage('Apply or Destroy') {
             steps {
-                script {
-                    withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+               script{
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    
+                     if (params.ACTION == 'apply') {
                         sh """
                             cd 70-acm
+                            terraform plan
                             terraform apply -auto-approve
                         """
+                    } else {
+                        sh """
+                            cd 60-ingress-alb
+                            terraform destroy -auto-approve
+                        """
                     }
                 }
+                 
+               }
             }
         }
-
         stage('Destroy Infra') {
-            when { expression { params.ACTION == 'destroy' } }
+            when { 
+                expression { params.ACTION == 'destroy'}
+            }
             steps {
-                script {
-                    withAWS(region: 'us-east-1', credentials: 'aws-creds') {
-                        // Reverse dependency order: highest-numbered / most-dependent first
-                        def list = ["60-ingress-alb", "70-acm", "60-ecr", "40-eks", "50-rds", "20-bastion", "10-sg", "00-vpc"]
-                        for (item in list) {
-                            sh """
-                                cd ${item}
-                                terraform init -reconfigure
-                                terraform destroy -auto-approve
-                            """
-                        }
+               script{
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    def list = ["70-acm","60-ecr","40-eks", "50-rds", "20-bastion", "10-sg", "00-vpc"]
+                    for(item in list){
+                        sh """
+                            cd $item
+                            terraform init -reconfigure
+                            terraform destroy -auto-approve
+                        """
                     }
                 }
+                 
+               }
+            }
+        }
+        
+    }
+    post {
+            always {
+                echo 'i will run if it is success or fail'
+                deleteDir()
+            }
+            failure {
+                echo 'i will run when pipeline fails'
+            }
+            success {
+                echo 'i will run when pipeline success'
             }
         }
     }
 
-    post {
-        always  { echo 'i will run if it is success or fail'; deleteDir() }
-        failure { echo 'i will run when pipeline fails' }
-        success { echo 'i will run when pipeline success' }
-    }
-}
+
