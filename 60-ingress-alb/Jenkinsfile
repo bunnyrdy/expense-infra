@@ -23,7 +23,7 @@ pipeline {
                     sh """
                         cd 60-ingress-alb
                         terraform init -reconfigure
-                        terraform plan
+                        
                     """
                 }
                     
